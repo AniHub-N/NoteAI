@@ -31,8 +31,9 @@ export async function getYouTubeTranscript(videoIdOrUrl: string) {
             text: item.text,
             speaker: "YouTube Captions"
         }));
-    } catch (error) {
+    } catch (error: any) {
         console.error("YouTube transcript fetch error:", error);
-        throw new Error("Could not fetch transcript from YouTube. It might be disabled for this video.");
+        const detail = error?.message || String(error);
+        throw new Error(`YouTube Transcript Error: ${detail}. The video might have disabled captions or YouTube is blocking the request from our server.`);
     }
 }
