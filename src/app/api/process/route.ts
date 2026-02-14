@@ -36,54 +36,38 @@ export async function POST(request: NextRequest) {
                 try {
                     // Step 1: Transcribe
                     sendUpdate("transcribe", 20, "Transcribing audio...");
-                    const transcribeRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/transcribe`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ fileUrl }),
-                    });
 
-                    if (!transcribeRes.ok) {
-                        const errData = await transcribeRes.json().catch(() => ({}));
-                        throw new Error(`Transcription failed: ${errData.details || errData.error || transcribeRes.statusText}`);
+                    // Import directly to avoid loopback auth issues
+                    const { transcribeAudio } = await import("@/lib/api/groq");
+
+                    // Fetch file for transcription
+                    const fileResponse = await fetch(fileUrl);
+                    if (!fileResponse.ok) {
+                        throw new Error(`Failed to fetch file for transcription: ${fileResponse.statusText}`);
                     }
+                    const arrayBuffer = await fileResponse.arrayBuffer();
+                    const fileBuffer = Buffer.from(arrayBuffer);
+                    const audioFilename = fileUrl.split('/').pop() || "audio-file";
 
-                    const { transcript, segments } = await transcribeRes.json();
+                    const { text: transcript, segments } = await transcribeAudio(fileBuffer, audioFilename);
                     sendUpdate("transcribe", 40, "Transcription complete!");
 
                     // Step 2: Summarize
                     sendUpdate("summarize", 50, "Generating summary...");
-                    const summarizeRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/summarize`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ transcript }),
-                    });
+                    const { generateSummary } = await import("@/lib/api/gemini");
+                    const summaryData = await generateSummary(transcript);
 
-                    if (!summarizeRes.ok) {
-                        const errData = await summarizeRes.json().catch(() => ({}));
-                        throw new Error(`Summarization failed: ${errData.details || errData.error || summarizeRes.statusText}`);
-                    }
-
-                    const { summary: summaryData } = await summarizeRes.json();
                     const aiTitle = summaryData.title;
                     const finalSummary = { ...summaryData };
-                    delete finalSummary.title; // Keep the summary object clean
+                    delete finalSummary.title;
 
                     sendUpdate("summarize", 70, "Summary complete!");
 
                     // Step 3: Generate Quiz
                     sendUpdate("quiz", 80, "Creating quiz questions...");
-                    const quizRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/quiz`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ transcript, summary: finalSummary }),
-                    });
+                    const { generateQuiz } = await import("@/lib/api/gemini");
+                    const quiz = await generateQuiz(transcript, finalSummary);
 
-                    if (!quizRes.ok) {
-                        const errData = await quizRes.json().catch(() => ({}));
-                        throw new Error(`Quiz generation failed: ${errData.details || errData.error || quizRes.statusText}`);
-                    }
-
-                    const { quiz } = await quizRes.json();
                     sendUpdate("quiz", 90, "Quiz complete!");
 
                     // Resolve Title: Use AI title if original filename is generic or not provided
