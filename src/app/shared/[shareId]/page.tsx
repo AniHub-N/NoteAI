@@ -1,58 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TranscriptView } from "@/components/lecture-view/transcript-view";
 import { SummaryView } from "@/components/lecture-view/summary-view";
 import { QuizView } from "@/components/lecture-view/quiz-view";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { BookOpen, FileText, Sparkles, ExternalLink } from "lucide-react";
+import { Sparkles, ExternalLink, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
-
-// Mock data - same as lecture view
-const MOCK_LECTURE = {
-    id: "1",
-    title: "Introduction to Economics",
-    date: "2024-02-10",
-    duration: 2700,
-    course: "ECON 101",
-    professor: "Prof. Johnson",
-    transcript: [
-        { id: "1", start: 0, end: 15, text: "Welcome everyone to today's lecture on supply and demand.", speaker: "Prof. Johnson" },
-        { id: "2", start: 15, end: 30, text: "We'll be covering the fundamental principles that govern market economies.", speaker: "Prof. Johnson" },
-    ],
-    summary: {
-        executiveSummary: "This lecture introduces the fundamental concepts of supply and demand in economics, exploring how market forces determine prices and quantities in a free market system.",
-        keyTopics: [
-            { timestamp: 120, topic: "Law of Supply" },
-            { timestamp: 450, topic: "Law of Demand" },
-            { timestamp: 890, topic: "Market Equilibrium" },
-        ],
-        takeaways: ["Supply and demand determine market prices", "Equilibrium occurs where supply meets demand"],
-        definitions: [
-            { term: "Supply", definition: "The quantity of a good or service that producers are willing to offer at various prices." },
-            { term: "Demand", definition: "The quantity of a good or service that consumers are willing to purchase at various prices." },
-        ],
-    },
-    quiz: [
-        {
-            id: "1",
-            question: "What happens to price when demand increases and supply remains constant?",
-            options: ["Price decreases", "Price increases", "Price stays the same", "Price becomes zero"],
-            correctAnswer: 1,
-            explanation: "When demand increases while supply remains constant, competition among buyers drives the price up.",
-            difficulty: "easy" as const,
-        },
-    ],
-};
-
 import { useParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function SharedLecturePage() {
     const params = useParams();
-    const shareId = params?.shareId;
+    const shareId = params?.shareId as string;
     const [activeTab, setActiveTab] = useState("study");
+    const [lecture, setLecture] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!shareId) return;
+
+        const fetchLecture = async () => {
+            try {
+                setLoading(true);
+                const { data, error: dbError } = await supabase
+                    .from("lectures")
+                    .select("*")
+                    .eq("id", shareId)
+                    .single();
+
+                if (dbError) throw dbError;
+                if (!data) throw new Error("Lecture not found");
+
+                setLecture(data);
+            } catch (err: any) {
+                console.error("Fetch shared lecture error:", err);
+                setError(err.message || "Failed to load shared lecture");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLecture();
+    }, [shareId]);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 dark:bg-black">
+                <Loader2 className="h-10 w-10 text-indigo-600 animate-spin mb-4" />
+                <p className="text-zinc-500 font-medium">Loading lecture notes...</p>
+            </div>
+        );
+    }
+
+    if (error || !lecture) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 dark:bg-black p-6 text-center">
+                <AlertCircle className="h-16 w-16 text-red-500 mb-6" />
+                <h1 className="text-2xl font-bold mb-2">Oops! Something went wrong</h1>
+                <p className="text-zinc-500 max-w-md mb-8">
+                    {error === "JSON object requested, multiple (or no) rows returned"
+                        ? "We couldn't find the lecture notes you're looking for. The link might be incorrect or expired."
+                        : error || "Failed to load lecture notes."}
+                </p>
+                <Link href="/">
+                    <Button className="bg-indigo-600">Go to Homepage</Button>
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-black animate-fade-in">
@@ -67,11 +86,13 @@ export default function SharedLecturePage() {
                     </div>
                     <Separator orientation="vertical" className="h-6" />
                     <div>
-                        <h1 className="font-semibold text-lg leading-tight truncate max-w-md">{MOCK_LECTURE.title}</h1>
-                        <p className="text-xs text-zinc-500">{MOCK_LECTURE.course} • {MOCK_LECTURE.professor}</p>
+                        <h1 className="font-semibold text-lg leading-tight truncate max-w-md">{lecture.title}</h1>
+                        <p className="text-xs text-zinc-500">
+                            {lecture.course_name || "General Course"} • {lecture.professor_name || "Unknown Professor"}
+                        </p>
                     </div>
                 </div>
-                <Link href="/dashboard">
+                <Link href="/">
                     <Button className="bg-indigo-600 hover:bg-indigo-700">
                         <ExternalLink className="mr-2 h-4 w-4" />
                         Create Your Own
@@ -80,21 +101,34 @@ export default function SharedLecturePage() {
             </header>
 
             {/* Banner */}
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 text-center text-sm">
-                📚 This is a shared lecture note. Sign up to create your own AI-powered study guides!
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 text-center text-sm font-medium">
+                📚 This is a shared study guide. Sign up to create your own from any audio or video!
             </div>
 
             {/* Main Content */}
             <main className="flex-1 overflow-hidden">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-                    <TabsContent value="study" className="h-full m-0">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+                    <div className="px-6 py-2 border-b bg-white dark:bg-zinc-900 overflow-x-auto">
+                        <TabsList className="bg-zinc-100 dark:bg-zinc-800">
+                            <TabsTrigger value="study">Study Guide</TabsTrigger>
+                            <TabsTrigger value="quiz">Practice Quiz</TabsTrigger>
+                        </TabsList>
+                    </div>
+
+                    <TabsContent value="study" className="flex-1 m-0 overflow-hidden">
                         <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
                             <div className="border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto">
-                                <TranscriptView transcript={MOCK_LECTURE.transcript} />
+                                <TranscriptView transcript={lecture.transcript || []} />
                             </div>
                             <div className="overflow-y-auto">
-                                <SummaryView summary={MOCK_LECTURE.summary} />
+                                <SummaryView summary={lecture.summary || {}} />
                             </div>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="quiz" className="flex-1 m-0 overflow-y-auto p-6 bg-zinc-50 dark:bg-black">
+                        <div className="max-w-3xl mx-auto">
+                            <QuizView questions={lecture.quiz || []} />
                         </div>
                     </TabsContent>
                 </Tabs>
