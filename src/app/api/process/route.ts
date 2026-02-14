@@ -70,9 +70,9 @@ export async function POST(request: NextRequest) {
 
                     sendUpdate("quiz", 90, "Quiz complete!");
 
-                    // Resolve Title: Use AI title if original filename is generic or not provided
-                    const isGenericName = !filename || filename.startsWith("recording-") || filename.toLowerCase().includes("upload");
-                    const finalTitle = isGenericName ? aiTitle : filename;
+                    // Resolve Title: Prioritize AI title if available, otherwise use filename
+                    // AI title is almost always better than a file name like "audio_2023.mp3"
+                    const finalTitle = (aiTitle && aiTitle.length > 2) ? aiTitle : (filename || "Untitled Lecture");
 
                     // Step 4: Save to database (optional)
                     sendUpdate("save", 95, "Saving lecture...");
