@@ -52,12 +52,25 @@ export async function GET(request: NextRequest) {
             }
         }
 
+        // Test Supabase Database Table
+        let tableStatus = "not checked";
+        if (hasSupabase) {
+            try {
+                const { supabase } = await import("@/lib/supabase");
+                const { error } = await supabase.from("lectures").select("id").limit(1);
+                tableStatus = error ? `error: ${error.message}` : "table 'lectures' found ✅";
+            } catch (error) {
+                tableStatus = `error: ${error instanceof Error ? error.message : 'unknown'}`;
+            }
+        }
+
         return NextResponse.json({
             status: "API Health Check",
             apis: {
                 groq: hasGroq ? "configured ✅" : "not configured ❌",
                 gemini: geminiStatus,
-                supabase: supabaseStatus,
+                supabase_storage: supabaseStatus,
+                supabase_table: tableStatus,
                 serviceKey: hasServiceKey ? "present ✅" : "missing ❌ (required for upload)",
             },
             availableGeminiModels: availableModels,
