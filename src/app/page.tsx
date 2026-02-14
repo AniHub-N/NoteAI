@@ -81,28 +81,45 @@ export default function Home() {
           </div>
 
 
-          <div id="pricing" className="mt-32 w-full max-w-5xl text-center">
-            <h2 className="text-3xl font-bold mb-12">Simple Pricing</h2>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="p-8 rounded-2xl border border-zinc-800 bg-zinc-900/30">
-                <h3 className="text-xl font-bold mb-4">Free</h3>
-                <p className="text-3xl font-bold mb-4">$0<span className="text-sm font-normal text-zinc-400">/mo</span></p>
-                <ul className="text-left space-y-2 mb-8 text-zinc-400">
-                  <li>• 3 Lectures / month</li>
-                  <li>• Basic Summaries</li>
+          <div id="pricing" className="mt-32 w-full max-w-7xl text-center">
+            <h2 className="text-3xl font-bold mb-12 animate-in fade-in slide-in-from-bottom-5 duration-700">Simple Pricing</h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="p-8 rounded-2xl border border-zinc-800 bg-zinc-900/30 flex flex-col h-full transition-all hover:scale-105 duration-300">
+                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500 mb-4">Free</h3>
+                <p className="text-5xl font-black mb-4">₹0<span className="text-sm font-normal text-zinc-500">/mo</span></p>
+                <ul className="text-left space-y-3 mb-8 text-zinc-400 flex-1">
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> 3 Lectures / month</li>
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> Basic Summaries</li>
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> Quiz Generation</li>
                 </ul>
-                <Button variant="outline" className="w-full">Get Started</Button>
+                <Link href="/dashboard" className="w-full">
+                  <Button variant="outline" className="w-full h-12 rounded-xl">Get Started</Button>
+                </Link>
               </div>
-              <div className="p-8 rounded-2xl border border-indigo-500/30 bg-indigo-900/10 relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-indigo-600 text-xs px-3 py-1 rounded-bl-lg">POPULAR</div>
-                <h3 className="text-xl font-bold mb-4">Pro</h3>
-                <p className="text-3xl font-bold mb-4">$9<span className="text-sm font-normal text-zinc-400">/mo</span></p>
-                <ul className="text-left space-y-2 mb-8 text-zinc-300">
-                  <li>• Unlimited Lectures</li>
-                  <li>• Advanced Quizzes</li>
-                  <li>• Export to PDF</li>
+
+              <div className="p-8 rounded-2xl border-2 border-indigo-500 bg-indigo-900/10 relative overflow-hidden flex flex-col h-full transition-all hover:scale-105 duration-300 shadow-2xl shadow-indigo-500/10">
+                <div className="absolute top-0 right-0 bg-indigo-600 text-[10px] font-black px-3 py-1 rounded-bl-lg tracking-widest uppercase">POPULAR</div>
+                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-indigo-400 mb-4">Pro</h3>
+                <p className="text-5xl font-black mb-4">₹299<span className="text-sm font-normal text-zinc-500">/mo</span></p>
+                <ul className="text-left space-y-3 mb-8 text-zinc-300 flex-1">
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> Unlimited Lectures</li>
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> Advanced Quizzes</li>
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> PDF & MD Export</li>
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> Priority Processing</li>
                 </ul>
-                <Button className="w-full bg-indigo-600 hover:bg-indigo-700">Upgrade (Coming Soon)</Button>
+                <Button className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20">Upgrade Now</Button>
+              </div>
+
+              <div className="p-8 rounded-2xl border border-zinc-800 bg-zinc-900/30 flex flex-col h-full transition-all hover:scale-105 duration-300">
+                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500 mb-4">Pay As You Go</h3>
+                <p className="text-5xl font-black mb-4">₹10<span className="text-sm font-normal text-zinc-500">/hr</span></p>
+                <ul className="text-left space-y-3 mb-8 text-zinc-400 flex-1">
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> ₹10 / hr of audio</li>
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> All Pro Features</li>
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> No Monthly Fee</li>
+                  <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> Credits Never Expire</li>
+                </ul>
+                <Button variant="outline" className="w-full h-12 rounded-xl">Buy Credits</Button>
               </div>
             </div>
           </div>
