@@ -22,7 +22,14 @@ interface ShareDialogProps {
 
 export function ShareDialog({ lectureId, lectureTitle }: ShareDialogProps) {
     const [copied, setCopied] = useState(false);
-    const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/shared/${lectureId}`;
+    const getBaseUrl = () => {
+        if (typeof window !== "undefined") {
+            return window.location.origin;
+        }
+        return process.env.NEXT_PUBLIC_APP_URL || "";
+    };
+
+    const shareUrl = `${getBaseUrl()}/shared/${lectureId}`;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(shareUrl);
