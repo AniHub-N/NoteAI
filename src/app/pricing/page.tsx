@@ -35,6 +35,21 @@ const tiers = [
         ],
         buttonText: "Upgrade (Coming Soon)",
         highlight: true,
+    },
+    {
+        name: "Pay As You Go",
+        price: "₹10",
+        description: "Only pay for what you actually use",
+        features: [
+            "₹10 per hour of audio",
+            "No monthly commitment",
+            "Same features as Pro",
+            "Perfect for one-off seminars",
+            "Buy credits anytime",
+            "No expiry on credits"
+        ],
+        buttonText: "Top Up (Coming Soon)",
+        highlight: false,
     }
 ];
 
@@ -59,13 +74,13 @@ export default function PricingPage() {
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
                     {tiers.map((tier, index) => (
                         <Card
                             key={index}
                             className={`relative flex flex-col h-full bg-zinc-950/50 backdrop-blur-xl transition-all duration-500 hover:border-indigo-500/50 group ${tier.highlight
-                                    ? "border-indigo-500 shadow-2xl shadow-indigo-500/10"
-                                    : "border-zinc-800"
+                                ? "border-indigo-500 shadow-2xl shadow-indigo-500/10"
+                                : "border-zinc-800"
                                 } animate-in fade-in slide-in-from-bottom-5 duration-700`}
                             style={{ animationDelay: `${index * 150}ms` }}
                         >
@@ -84,7 +99,9 @@ export default function PricingPage() {
                                     <span className="text-6xl font-black tracking-tighter text-white">
                                         {tier.price}
                                     </span>
-                                    <span className="text-zinc-500 font-medium">/mo</span>
+                                    <span className="text-zinc-500 font-medium">
+                                        {tier.name === "Pay As You Go" ? "/hr" : "/mo"}
+                                    </span>
                                 </div>
                                 <CardDescription className="text-zinc-400 mt-4 text-sm">
                                     {tier.description}
@@ -116,8 +133,8 @@ export default function PricingPage() {
                                         }
                                     }}
                                     className={`w-full h-14 text-sm font-black uppercase tracking-widest rounded-xl transition-all ${tier.name === "Free"
-                                            ? "bg-white text-black hover:bg-zinc-200"
-                                            : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/20"
+                                        ? "bg-white text-black hover:bg-zinc-200"
+                                        : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-600/20"
                                         }`}
                                 >
                                     {tier.buttonText}

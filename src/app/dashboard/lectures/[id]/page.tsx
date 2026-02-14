@@ -79,29 +79,85 @@ const MOCK_LECTURE: Lecture = {
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@clerk/nextjs";
+
 export default function LecturePage() {
     const params = useParams();
     const searchParams = useSearchParams();
-    const id = params?.id;
+    const id = params?.id as string;
+    const { userId } = useAuth();
 
     const [lecture, setLecture] = useState<Lecture | null>(null);
     const [activeTab, setActiveTab] = useState("study");
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!id) return;
 
-        // Try to get from localStorage using the ID
-        const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
-        const found = history.find((h: any) => h.id === id);
+        const fetchLecture = async () => {
+            setLoading(true);
 
-        if (found) {
-            setLecture(found);
-        } else if (id === "1") {
-            // Fallback to mock for the demo ID if not found
-            setLecture(MOCK_LECTURE);
-        } else {
-            console.error("Lecture not found in localStorage:", id);
-        }
+            // 1. Try localStorage first (fastest for current session)
+            const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
+            const localFound = history.find((h: any) => h.id === id || h.slug === id);
+
+            if (localFound) {
+                setLecture(localFound);
+                setLoading(false);
+                return;
+            }
+
+            // 2. Fallback to Mock for demo ID
+            if (id === "1") {
+                setLecture(MOCK_LECTURE);
+                setLoading(false);
+                return;
+            }
+
+            // 3. Fetch from Supabase (Persistence across versions/devices)
+            try {
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+                let query = supabase.from("lectures").select("*");
+
+                if (isUuid) {
+                    query = query.or(`id.eq.${id},slug.eq.${id}`);
+                } else {
+                    query = query.eq("slug", id);
+                }
+
+                const { data, error } = await query.single();
+
+                if (error) {
+                    console.error("Supabase fetch error:", error);
+                    setLoading(false);
+                    return;
+                }
+
+                if (data) {
+                    const formatted: Lecture = {
+                        id: data.id,
+                        title: data.title,
+                        date: new Date(data.created_at).toISOString().split('T')[0],
+                        duration: data.duration,
+                        course: data.course_name,
+                        professor: data.professor_name,
+                        transcript: data.transcript,
+                        summary: data.summary,
+                        quiz: data.quiz,
+                        fileUrl: data.file_url,
+                        slug: data.slug
+                    };
+                    setLecture(formatted);
+                }
+            } catch (err) {
+                console.error("Error fetching from Supabase:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLecture();
     }, [id]);
 
     if (!lecture) {

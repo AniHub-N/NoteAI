@@ -5,16 +5,64 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus, Clock, User, BookOpen } from "lucide-react";
 import { Lecture } from "@/lib/types";
+import { useAuth } from "@clerk/nextjs";
+import { supabase } from "@/lib/supabase";
 
 export default function Dashboard() {
+    const { userId } = useAuth();
     const [lectures, setLectures] = useState<Lecture[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
-        setLectures(history);
-        setLoading(false);
-    }, []);
+        const fetchLectures = async () => {
+            if (!userId) {
+                // If not logged in, just show nothing or local history
+                const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
+                setLectures(history);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from("lectures")
+                    .select("*")
+                    .eq("user_id", userId)
+                    .order("created_at", { ascending: false });
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const formattedLectures: Lecture[] = data.map(item => ({
+                        id: item.id,
+                        title: item.title,
+                        date: new Date(item.created_at).toISOString().split('T')[0],
+                        duration: item.duration,
+                        course: item.course_name,
+                        professor: item.professor_name,
+                        transcript: item.transcript,
+                        summary: item.summary,
+                        quiz: item.quiz,
+                        fileUrl: item.file_url,
+                        slug: item.slug
+                    }));
+                    setLectures(formattedLectures);
+                } else {
+                    // Fallback to local storage if nothing in DB
+                    const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
+                    setLectures(history);
+                }
+            } catch (err) {
+                console.error("Error fetching lectures:", err);
+                const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
+                setLectures(history);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLectures();
+    }, [userId]);
 
     const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
