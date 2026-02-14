@@ -33,4 +33,5 @@ export interface Lecture {
     summary: LectureSummary;
     quiz: QuizQuestion[];
     fileUrl?: string; // URL for video/audio playback
+    slug?: string; // Short human-readable or random slug for sharing
 }

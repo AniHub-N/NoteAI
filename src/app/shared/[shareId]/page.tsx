@@ -26,11 +26,18 @@ export default function SharedLecturePage() {
         const fetchLecture = async () => {
             try {
                 setLoading(true);
-                const { data, error: dbError } = await supabase
-                    .from("lectures")
-                    .select("*")
-                    .eq("id", shareId)
-                    .single();
+                // Search by ID (UUID) or Slug
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shareId);
+
+                let query = supabase.from("lectures").select("*");
+
+                if (isUuid) {
+                    query = query.or(`id.eq.${shareId},slug.eq.${shareId}`);
+                } else {
+                    query = query.eq("slug", shareId);
+                }
+
+                const { data, error: dbError } = await query.single();
 
                 if (dbError) throw dbError;
                 if (!data) throw new Error("Lecture not found");

@@ -19,6 +19,7 @@ export default function UploadPage() {
     const [progress, setProgress] = useState(0);
     const [courseName, setCourseName] = useState("");
     const [professorName, setProfessorName] = useState("");
+    const [youtubeUrl, setYoutubeUrl] = useState("");
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -246,8 +247,86 @@ export default function UploadPage() {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const handleUrlSubmit = () => {
-        simulateProcessing();
+    const handleUrlSubmit = async () => {
+        if (!youtubeUrl) return;
+
+        setUploading(true);
+        setProgress(0);
+
+        try {
+            // Step 1: Process URL directly
+            const processRes = await fetch("/api/process", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    youtubeUrl,
+                    courseName,
+                    professorName,
+                }),
+            });
+
+            if (!processRes.ok) {
+                const errorData = await processRes.json().catch(() => ({}));
+                const errorMessage = errorData.error || `Processing failed: ${processRes.status}`;
+                throw new Error(errorMessage);
+            }
+
+            // Read streaming response (same logic as handleUpload)
+            const reader = processRes.body?.getReader();
+            const decoder = new TextDecoder();
+
+            if (reader) {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split("\n");
+
+                    for (const line of lines) {
+                        if (line.startsWith("data: ")) {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.stage === "done") {
+                                // Save to localStorage, etc. (reuse the logic from handleUpload if possible, but for now duplicate)
+                                const newLecture = {
+                                    id: data.lectureId,
+                                    title: data.title || "YouTube Lecture",
+                                    date: new Date().toISOString().split('T')[0],
+                                    duration: data.transcript.length > 0 ? data.transcript[data.transcript.length - 1].end : 0,
+                                    course: courseName || "General",
+                                    professor: professorName || "Guest Speaker",
+                                    transcript: data.transcript,
+                                    summary: data.summary,
+                                    quiz: data.quiz,
+                                    fileUrl: youtubeUrl,
+                                    slug: data.slug,
+                                };
+
+                                const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
+                                const existingIndex = history.findIndex((h: any) => h.id === data.lectureId);
+                                if (existingIndex > -1) history[existingIndex] = newLecture;
+                                else history.unshift(newLecture);
+                                localStorage.setItem("notesai_history", JSON.stringify(history.slice(0, 20)));
+
+                                setUploading(false);
+                                setProgress(100);
+                                router.push(`/dashboard/lectures/${data.lectureId}`);
+                            } else if (data.stage === "error") {
+                                throw new Error(data.error);
+                            } else {
+                                setProgress(data.progress);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("URL processing error:", error);
+            alert(error instanceof Error ? error.message : "Processing failed");
+            setUploading(false);
+            setProgress(0);
+        }
     };
 
     return (
@@ -370,8 +449,13 @@ export default function UploadPage() {
                         <CardContent className="pt-6">
                             <div className="grid gap-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="url">YouTube or Zoom URL</Label>
-                                    <Input id="url" placeholder="https://..." />
+                                    <Label htmlFor="url">YouTube URL</Label>
+                                    <Input
+                                        id="url"
+                                        placeholder="https://www.youtube.com/watch?v=..."
+                                        value={youtubeUrl}
+                                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                                    />
                                 </div>
                                 <Button onClick={handleUrlSubmit} disabled={uploading}>
                                     {uploading ? "Processing..." : "Fetch & Process"}

@@ -146,7 +146,11 @@ export default function LecturePage() {
                         </TabsList>
                     </Tabs>
                     <Separator orientation="vertical" className="h-6 mx-2" />
-                    <ShareDialog lectureId={id as string} lectureTitle={lectureTitle} />
+                    <ShareDialog
+                        lectureId={id as string}
+                        lectureTitle={lectureTitle}
+                        lectureSlug={lecture.slug}
+                    />
                     <ExportButton
                         lectureTitle={lectureTitle}
                         lectureCourse={lectureCourse}

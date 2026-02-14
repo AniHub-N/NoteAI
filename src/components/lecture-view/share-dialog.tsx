@@ -18,9 +18,10 @@ import { QRCodeSVG } from "qrcode.react";
 interface ShareDialogProps {
     lectureId: string;
     lectureTitle: string;
+    lectureSlug?: string;
 }
 
-export function ShareDialog({ lectureId, lectureTitle }: ShareDialogProps) {
+export function ShareDialog({ lectureId, lectureTitle, lectureSlug }: ShareDialogProps) {
     const [copied, setCopied] = useState(false);
     const getBaseUrl = () => {
         if (typeof window !== "undefined") {
@@ -29,7 +30,7 @@ export function ShareDialog({ lectureId, lectureTitle }: ShareDialogProps) {
         return process.env.NEXT_PUBLIC_APP_URL || "";
     };
 
-    const shareUrl = `${getBaseUrl()}/shared/${lectureId}`;
+    const shareUrl = `${getBaseUrl()}/shared/${lectureSlug || lectureId}`;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(shareUrl);
