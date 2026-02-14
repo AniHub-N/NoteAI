@@ -80,9 +80,10 @@ export default function UploadPage() {
             });
 
             if (!uploadRes.ok) {
-                const errorText = await uploadRes.text();
-                console.error("Upload API error:", uploadRes.status, errorText);
-                throw new Error(`Upload failed: ${uploadRes.status}`);
+                const errorData = await uploadRes.json().catch(() => ({}));
+                const errorMessage = errorData.error || `Upload failed: ${uploadRes.status}`;
+                console.error("Upload API error:", uploadRes.status, errorData);
+                throw new Error(errorMessage);
             }
 
             const { fileUrl, filename } = await uploadRes.json();
@@ -101,9 +102,10 @@ export default function UploadPage() {
             });
 
             if (!processRes.ok) {
-                const errorText = await processRes.text();
-                console.error("Process API error:", processRes.status, errorText);
-                throw new Error(`Processing failed: ${processRes.status} - ${errorText}`);
+                const errorData = await processRes.json().catch(() => ({}));
+                const errorMessage = errorData.error || `Processing failed: ${processRes.status}`;
+                console.error("Process API error:", processRes.status, errorData);
+                throw new Error(errorMessage);
             }
 
             // Read streaming response
