@@ -1,4 +1,4 @@
-import { TranscriptClient } from 'youtube-transcript-api';
+import { YoutubeTranscript } from 'youtube-transcript';
 
 /**
  * Extracts the video ID from various YouTube URL formats
@@ -20,13 +20,13 @@ export async function getYouTubeTranscript(videoIdOrUrl: string) {
     }
 
     try {
-        const transcript = await TranscriptClient.getTranscript(videoId);
+        const transcript = await YoutubeTranscript.fetchTranscript(videoId);
 
         // Format to match our internal transcript structure
         // Internal structure: { id, start, end, text, speaker }
         return transcript.map((item: any, index: number) => ({
             id: index.toString(),
-            start: item.offset / 1000, // convert ms to s if needed, but usually it's already in seconds or offset
+            start: item.offset / 1000,
             end: (item.offset + item.duration) / 1000,
             text: item.text,
             speaker: "YouTube Captions"
