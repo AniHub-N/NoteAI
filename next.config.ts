@@ -5,12 +5,11 @@ const nextConfig: NextConfig = {
   /* config options here */
 };
 
-export default withSentryConfig(nextConfig, {
-  // For all available options, see:
-  // https://github.com/getsentry/sentry-javascript/blob/master/packages/nextjs/src/config/types.ts
-
-  // Suppresses source map uploading logs during bundling
-  silent: true,
-  org: "notes-ai",
-  project: "javascript-nextjs",
-});
+// Make Sentry optional during build to avoid 404s/Build failures if not configured
+export default process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(nextConfig, {
+    silent: true,
+    org: process.env.SENTRY_ORG || "notes-ai",
+    project: process.env.SENTRY_PROJECT || "javascript-nextjs",
+  })
+  : nextConfig;
