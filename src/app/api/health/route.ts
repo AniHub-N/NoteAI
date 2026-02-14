@@ -10,8 +10,23 @@ export async function GET(request: NextRequest) {
 
         // Test Gemini API
         let geminiStatus = "not configured";
+        let availableModels: string[] = [];
         if (hasGemini) {
             try {
+                // List models using native fetch to see exactly what the API returns
+                const modelsUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GOOGLE_AI_API_KEY}`;
+                try {
+                    const modelsRes = await fetch(modelsUrl);
+                    if (modelsRes.ok) {
+                        const modelsData = await modelsRes.json();
+                        availableModels = (modelsData.models || [])
+                            .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
+                            .map((m: any) => m.name);
+                    }
+                } catch (e) {
+                    console.error("Model listing failed:", e);
+                }
+
                 const { GoogleGenerativeAI } = await import("@google/generative-ai");
                 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || "");
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -45,6 +60,7 @@ export async function GET(request: NextRequest) {
                 supabase: supabaseStatus,
                 serviceKey: hasServiceKey ? "present ✅" : "missing ❌ (required for upload)",
             },
+            availableGeminiModels: availableModels,
             timestamp: new Date().toISOString(),
         });
     } catch (error) {
