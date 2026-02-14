@@ -107,7 +107,9 @@ export default function Home() {
                   <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> PDF & MD Export</li>
                   <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> Priority Processing</li>
                 </ul>
-                <Button className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20">Upgrade Now</Button>
+                <Link href="/pricing" className="w-full">
+                  <Button className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20">Upgrade Now</Button>
+                </Link>
               </div>
 
               <div className="p-8 rounded-2xl border border-zinc-800 bg-zinc-900/30 flex flex-col h-full transition-all hover:scale-105 duration-300">
@@ -119,7 +121,9 @@ export default function Home() {
                   <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> No Monthly Fee</li>
                   <li className="flex items-center gap-2"><div className="h-1 w-1 rounded-full bg-indigo-500" /> Credits Never Expire</li>
                 </ul>
-                <Button variant="outline" className="w-full h-12 rounded-xl">Buy Credits</Button>
+                <Link href="/pricing" className="w-full">
+                  <Button variant="outline" className="w-full h-12 rounded-xl">Buy Credits</Button>
+                </Link>
               </div>
             </div>
           </div>
