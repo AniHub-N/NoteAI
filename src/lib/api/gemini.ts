@@ -14,7 +14,7 @@ export async function generateTitle(
   transcript: string
 ): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const prompt = `Based on the following lecture transcript, generate a concise, descriptive, and academic title for the lecture (max 10 words).
     
 Transcript:
@@ -38,7 +38,7 @@ export async function generateSummary(
       throw new Error("GOOGLE_AI_API_KEY is not set in environment variables");
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const prompt = `You are an expert at analyzing lecture transcripts and creating comprehensive study guides.
 
