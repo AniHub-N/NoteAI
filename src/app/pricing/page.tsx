@@ -8,7 +8,7 @@ import Link from "next/link";
 const tiers = [
     {
         name: "Free",
-        price: "$0",
+        price: "₹0",
         description: "Perfect for trying out NotesAI",
         features: [
             "3 Lecture Processings/month",
@@ -22,7 +22,7 @@ const tiers = [
     },
     {
         name: "Pro",
-        price: "$9.99",
+        price: "₹299",
         description: "Ultimate study companion for serious students",
         features: [
             "Unlimited Lecture Processings",
@@ -56,8 +56,8 @@ export default function PricingPage() {
                         <Card
                             key={index}
                             className={`relative flex flex-col h-full transition-all duration-300 hover:scale-105 ${tier.highlight
-                                    ? "border-2 border-indigo-500 shadow-2xl shadow-indigo-500/10 dark:bg-zinc-900"
-                                    : "border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900/50"
+                                ? "border-2 border-indigo-500 shadow-2xl shadow-indigo-500/10 dark:bg-zinc-900"
+                                : "border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900/50"
                                 } animate-fade-in-up`}
                             style={{ animationDelay: `${index * 100}ms` }}
                         >
@@ -92,9 +92,16 @@ export default function PricingPage() {
 
                             <CardFooter className="pt-8">
                                 <Button
+                                    onClick={() => {
+                                        if (tier.name === "Free") {
+                                            window.location.href = "/dashboard/upload";
+                                        } else {
+                                            alert("Pro membership is launching soon! We are currently finalizing Indian payment gateway integration (Stripe/Razorpay). Stay tuned!");
+                                        }
+                                    }}
                                     className={`w-full h-12 text-lg font-bold transition-all ${tier.highlight
-                                            ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20"
-                                            : "bg-zinc-100 hover:bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700"
+                                        ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20"
+                                        : "bg-zinc-100 hover:bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700"
                                         }`}
                                 >
                                     {tier.buttonText}

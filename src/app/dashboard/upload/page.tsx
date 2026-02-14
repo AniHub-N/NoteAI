@@ -104,6 +104,12 @@ export default function UploadPage() {
 
             if (!processRes.ok) {
                 const errorData = await processRes.json().catch(() => ({}));
+                if (processRes.status === 403) {
+                    alert(errorData.message || "Usage limit reached! Please upgrade to Pro for unlimited lectures.");
+                    router.push("/pricing");
+                    setUploading(false);
+                    return;
+                }
                 const errorMessage = errorData.error || `Processing failed: ${processRes.status}`;
                 console.error("Process API error:", processRes.status, errorData);
                 throw new Error(errorMessage);
@@ -267,6 +273,12 @@ export default function UploadPage() {
 
             if (!processRes.ok) {
                 const errorData = await processRes.json().catch(() => ({}));
+                if (processRes.status === 403) {
+                    alert(errorData.message || "Usage limit reached! Please upgrade to Pro for unlimited lectures.");
+                    router.push("/pricing");
+                    setUploading(false);
+                    return;
+                }
                 const errorMessage = errorData.error || `Processing failed: ${processRes.status}`;
                 throw new Error(errorMessage);
             }

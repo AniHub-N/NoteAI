@@ -27,6 +27,11 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                     <h1 className="text-xl font-bold text-zinc-900 dark:text-white">My Lectures</h1>
                     <div className="flex gap-4">
+                        <Link href="/pricing">
+                            <Button variant="ghost">
+                                Pricing
+                            </Button>
+                        </Link>
                         <Link href="/dashboard/profile">
                             <Button variant="outline" size="icon">
                                 <User className="h-4 w-4" />
