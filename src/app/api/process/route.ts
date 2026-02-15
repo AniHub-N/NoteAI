@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
     try {
         // Get user ID (optional for now)
         let userId = "anonymous";
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
             // Continue without auth for testing
         }
 
-        const body = await request.json();
+        const body = await _request.json();
         const { fileUrl, youtubeUrl, filename, courseName, professorName } = body;
 
         // Usage Limit Check (3 free lectures)

@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, FileText, ChevronLeft } from "lucide-react";
+import { FileText, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 

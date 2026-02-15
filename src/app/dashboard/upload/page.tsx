@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,25 +44,6 @@ export default function UploadPage() {
         }
     };
 
-    const simulateProcessing = () => {
-        setUploading(true);
-        const fileName = file ? file.name : "New Recording";
-        let p = 0;
-        const interval = setInterval(() => {
-            p += 10;
-            setProgress(p);
-            if (p >= 100) {
-                clearInterval(interval);
-                setUploading(false);
-                const params = new URLSearchParams({
-                    filename: fileName,
-                    ...(courseName && { course: courseName }),
-                    ...(professorName && { professor: professorName })
-                });
-                router.push(`/dashboard/lectures/1?${params.toString()}`);
-            }
-        }, 500);
-    };
 
     const handleUpload = async () => {
         if (!file) return;

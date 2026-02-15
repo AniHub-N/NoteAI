@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, MessageCircle, Mail, ChevronLeft, Send, Github } from "lucide-react";
+import { MessageCircle, Mail, ChevronLeft, Github } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +22,7 @@ export default function ContactPage() {
                 <div className="text-center mb-16">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold mb-4 uppercase tracking-widest">
                         <MessageCircle className="h-3 w-3" />
-                        We're here to help
+                        We&apos;re here to help
                     </div>
                     <h1 className="text-5xl font-black tracking-tight mb-4">Contact <span className="text-indigo-500">Support</span></h1>
                     <p className="text-zinc-400 text-lg">Have questions about your plan, payments, or a technical issue? Drop us a line.</p>
@@ -50,7 +50,7 @@ export default function ContactPage() {
                                 <Github className="h-6 w-6 text-white" />
                             </div>
                             <h3 className="font-bold text-xl mb-2 text-white">GitHub</h3>
-                            <p className="text-zinc-400 text-sm mb-6">Contribute to the project or open a public issue if you're a developer.</p>
+                            <p className="text-zinc-400 text-sm mb-6">Contribute to the project or open a public issue if you&apos;re a developer.</p>
                             <Button variant="outline" className="w-full border-zinc-700 hover:bg-zinc-900 font-bold">
                                 View Repository
                             </Button>

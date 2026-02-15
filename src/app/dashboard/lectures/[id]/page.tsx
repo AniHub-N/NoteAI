@@ -76,17 +76,15 @@ const MOCK_LECTURE: Lecture = {
     ]
 };
 
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect } from "react";
 
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@clerk/nextjs";
+
 
 export default function LecturePage() {
     const params = useParams();
-    const searchParams = useSearchParams();
     const id = params?.id as string;
-    const { userId } = useAuth();
 
     const [lecture, setLecture] = useState<Lecture | null>(null);
     const [activeTab, setActiveTab] = useState("study");
