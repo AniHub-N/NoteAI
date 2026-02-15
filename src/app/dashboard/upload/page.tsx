@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UploadCloud, Link as LinkIcon, Mic, FileAudio } from "lucide-react";
+import { UploadCloud, Link as LinkIcon, Mic, FileAudio, FileText } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 
@@ -20,6 +20,7 @@ export default function UploadPage() {
     const [courseName, setCourseName] = useState("");
     const [professorName, setProfessorName] = useState("");
     const [youtubeUrl, setYoutubeUrl] = useState("");
+    const [pastedText, setPastedText] = useState("");
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -322,6 +323,95 @@ export default function UploadPage() {
         }
     };
 
+    const handleTextSubmit = async () => {
+        if (!pastedText || pastedText.trim().length < 50) {
+            alert("Please paste at least 50 characters of content.");
+            return;
+        }
+
+        setUploading(true);
+        setProgress(0);
+
+        try {
+            const processRes = await fetch("/api/process", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    rawText: pastedText,
+                    courseName,
+                    professorName,
+                }),
+            });
+
+            if (!processRes.ok) {
+                const errorData = await processRes.json().catch(() => ({}));
+                if (processRes.status === 403) {
+                    alert(errorData.message || "Usage limit reached! Please upgrade to Pro for unlimited lectures.");
+                    router.push("/pricing");
+                    setUploading(false);
+                    return;
+                }
+                const errorMessage = errorData.error || `Processing failed: ${processRes.status}`;
+                throw new Error(errorMessage);
+            }
+
+            const reader = processRes.body?.getReader();
+            const decoder = new TextDecoder();
+
+            if (reader) {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split("\n");
+
+                    for (const line of lines) {
+                        if (line.startsWith("data: ")) {
+                            const data = JSON.parse(line.slice(6));
+
+                            if (data.stage === "done") {
+                                // Save to localStorage, etc.
+                                const newLecture = {
+                                    id: data.lectureId,
+                                    title: data.title || "Pasted Content",
+                                    date: new Date().toISOString().split('T')[0],
+                                    duration: data.transcript.length > 0 ? data.transcript[data.transcript.length - 1].end : 0,
+                                    course: courseName || "General",
+                                    professor: professorName || "Guest Speaker",
+                                    transcript: data.transcript,
+                                    summary: data.summary,
+                                    quiz: data.quiz,
+                                    fileUrl: "pasted-text",
+                                    slug: data.slug,
+                                };
+
+                                const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
+                                const existingIndex = history.findIndex((h: any) => h.id === data.lectureId);
+                                if (existingIndex > -1) history[existingIndex] = newLecture;
+                                else history.unshift(newLecture);
+                                localStorage.setItem("notesai_history", JSON.stringify(history.slice(0, 20)));
+
+                                setUploading(false);
+                                setProgress(100);
+                                router.push(`/dashboard/lectures/${data.lectureId}`);
+                            } else if (data.stage === "error") {
+                                throw new Error(data.error);
+                            } else {
+                                setProgress(data.progress);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Text processing error:", error);
+            alert(error instanceof Error ? error.message : "Processing failed");
+            setUploading(false);
+            setProgress(0);
+        }
+    };
+
     return (
         <div className="container max-w-4xl py-12 animate-fade-in flex flex-col items-center">
             <div className="mb-12 text-center max-w-2xl px-4">
@@ -362,12 +452,15 @@ export default function UploadPage() {
                 </div>
 
                 <Tabs defaultValue="upload" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 mb-8">
+                    <TabsList className="grid w-full grid-cols-4 mb-8">
                         <TabsTrigger value="upload" className="flex items-center gap-2">
                             <UploadCloud className="h-4 w-4" /> Upload File
                         </TabsTrigger>
                         <TabsTrigger value="url" className="flex items-center gap-2">
                             <LinkIcon className="h-4 w-4" /> Header URL
+                        </TabsTrigger>
+                        <TabsTrigger value="text" className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" /> Paste Text
                         </TabsTrigger>
                         <TabsTrigger value="record" className="flex items-center gap-2">
                             <Mic className="h-4 w-4" /> Record
@@ -461,6 +554,28 @@ export default function UploadPage() {
                                     </div>
                                     <Button onClick={handleUrlSubmit} disabled={uploading}>
                                         {uploading ? "Processing..." : "Fetch & Process"}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="text">
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="grid gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="paste-content">Paste Content / Transcript</Label>
+                                        <textarea
+                                            id="paste-content"
+                                            placeholder="Paste the YouTube transcript or lecture content here..."
+                                            value={pastedText}
+                                            onChange={(e) => setPastedText(e.target.value)}
+                                            className="min-h-[200px] w-full rounded-xl border border-zinc-200 bg-white p-4 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-zinc-950 dark:border-zinc-800"
+                                        />
+                                    </div>
+                                    <Button onClick={handleTextSubmit} disabled={uploading}>
+                                        {uploading ? "Processing..." : "Summarize & Generate Quiz"}
                                     </Button>
                                 </div>
                             </CardContent>

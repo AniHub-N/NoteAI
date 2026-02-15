@@ -14,7 +14,7 @@ export async function POST(_request: NextRequest) {
         }
 
         const body = await _request.json();
-        const { fileUrl, youtubeUrl, filename, courseName, professorName } = body;
+        const { fileUrl, youtubeUrl, rawText, filename, courseName, professorName } = body;
 
         // Usage Limit Check (Based on Tier)
         if (userId !== "anonymous") {
@@ -93,9 +93,9 @@ export async function POST(_request: NextRequest) {
             }
         }
 
-        if (!fileUrl && !youtubeUrl) {
+        if (!fileUrl && !youtubeUrl && !rawText) {
             return NextResponse.json(
-                { error: "File URL or YouTube URL required" },
+                { error: "Content source required (File, URL, or Text)" },
                 { status: 400 }
             );
         }
@@ -114,7 +114,20 @@ export async function POST(_request: NextRequest) {
                     let transcript = "";
                     let segments: any[] = [];
 
-                    if (youtubeUrl) {
+                    if (rawText) {
+                        sendUpdate("transcribe", 20, "Processing pasted text...");
+                        transcript = rawText;
+                        // Split into rough segments for the UI (every 300 chars or so)
+                        const rawSegments = rawText.match(/.{1,300}/g) || [rawText];
+                        segments = rawSegments.map((text: string, i: number) => ({
+                            id: i.toString(),
+                            start: i * 15, // Synthetic timestamps (15s per chunk)
+                            end: (i + 1) * 15,
+                            text: text.trim(),
+                            speaker: "Pasted Content"
+                        }));
+                        sendUpdate("transcribe", 40, "Text processed!");
+                    } else if (youtubeUrl) {
                         sendUpdate("transcribe", 20, "Fetching YouTube transcript...");
                         const { getYouTubeTranscript } = await import("@/lib/api/youtube");
                         segments = await getYouTubeTranscript(youtubeUrl);
@@ -181,7 +194,7 @@ export async function POST(_request: NextRequest) {
                                     title: finalTitle || "Untitled Lecture",
                                     course_name: courseName || null,
                                     professor_name: professorName || null,
-                                    file_url: fileUrl || youtubeUrl,
+                                    file_url: fileUrl || youtubeUrl || "pasted-text",
                                     transcript: segments,
                                     summary: finalSummary,
                                     quiz: quiz,
@@ -216,7 +229,7 @@ export async function POST(_request: NextRequest) {
                                 transcript: segments,
                                 summary: finalSummary,
                                 quiz,
-                                fileUrl: fileUrl || youtubeUrl,
+                                fileUrl: fileUrl || youtubeUrl || "pasted-text",
                                 slug: slug,
                             })}\n\n`
                         )
