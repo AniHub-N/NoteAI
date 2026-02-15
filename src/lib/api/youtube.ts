@@ -58,7 +58,7 @@ export async function getYouTubeTranscript(videoIdOrUrl: string) {
         try {
             console.log(`[YouTube] Trying ${strategy.name}...`);
             const response = await fetch(strategy.url, {
-                headers: strategy.headers,
+                headers: strategy.headers as Record<string, string>,
                 signal: AbortSignal.timeout(8000) // 8s per strategy
             });
 
