@@ -22,11 +22,13 @@ export async function POST(_request: NextRequest) {
                 const { supabaseAdmin } = await import("@/lib/supabase");
 
                 // 1. Fetch User Profile
-                let { data: profile, error: profileError } = await supabaseAdmin
+                const { data: fetchedProfile, error: profileError } = await supabaseAdmin
                     .from("profiles")
                     .select("*")
                     .eq("user_id", userId)
                     .single();
+
+                let profile = fetchedProfile;
 
                 // 2. If no profile exists, create one (defaulting to 'free')
                 if (profileError && profileError.code === 'PGRST116') {

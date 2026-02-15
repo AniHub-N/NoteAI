@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Plus, Clock, User, BookOpen } from "lucide-react";
+import { Plus, Clock, User } from "lucide-react";
 import { Lecture } from "@/lib/types";
 import { useAuth } from "@clerk/nextjs";
 import { supabase } from "@/lib/supabase";
