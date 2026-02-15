@@ -102,57 +102,55 @@ export default function UploadPage() {
             const decoder = new TextDecoder();
 
             if (reader) {
+                let buffer = "";
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
 
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split("\n");
+                    buffer += decoder.decode(value, { stream: true });
+                    const parts = buffer.split("\n\n");
+                    buffer = parts.pop() || "";
 
-                    for (const line of lines) {
+                    for (const message of parts) {
+                        const line = message.trim();
                         if (line.startsWith("data: ")) {
-                            const data = JSON.parse(line.slice(6));
+                            try {
+                                const data = JSON.parse(line.slice(6));
 
-                            if (data.stage === "done") {
-                                // 1. Create the lecture object
-                                const newLecture = {
-                                    id: data.lectureId,
-                                    title: data.title || filename || file.name,
-                                    date: new Date().toISOString().split('T')[0],
-                                    duration: data.transcript.length > 0 ? data.transcript[data.transcript.length - 1].end : 0,
-                                    course: courseName || "General",
-                                    professor: professorName || "Guest Speaker",
-                                    transcript: data.transcript,
-                                    summary: data.summary,
-                                    quiz: data.quiz,
-                                    fileUrl: data.fileUrl,
-                                };
+                                if (data.stage === "done") {
+                                    const newLecture = {
+                                        id: data.lectureId,
+                                        title: data.title || filename || file.name,
+                                        date: new Date().toISOString().split('T')[0],
+                                        duration: data.transcript.length > 0 ? data.transcript[data.transcript.length - 1].end : 0,
+                                        course: courseName || "General",
+                                        professor: professorName || "Guest Speaker",
+                                        transcript: data.transcript,
+                                        summary: data.summary,
+                                        quiz: data.quiz,
+                                        fileUrl: data.fileUrl,
+                                    };
 
-                                // 2. Save to localStorage for history
-                                try {
-                                    const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
-                                    const existingIndex = history.findIndex((h: any) => h.id === data.lectureId);
-
-                                    if (existingIndex > -1) {
-                                        history[existingIndex] = newLecture;
-                                    } else {
-                                        history.unshift(newLecture);
+                                    try {
+                                        const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
+                                        const existingIndex = history.findIndex((h: any) => h.id === data.lectureId);
+                                        if (existingIndex > -1) history[existingIndex] = newLecture;
+                                        else history.unshift(newLecture);
+                                        localStorage.setItem("notesai_history", JSON.stringify(history.slice(0, 20)));
+                                    } catch (e) {
+                                        console.error("Failed to save to localStorage:", e);
                                     }
 
-                                    // Limit history to 20 items
-                                    localStorage.setItem("notesai_history", JSON.stringify(history.slice(0, 20)));
-                                } catch (e) {
-                                    console.error("Failed to save to localStorage:", e);
+                                    setUploading(false);
+                                    setProgress(100);
+                                    router.push(`/dashboard/lectures/${data.lectureId}`);
+                                } else if (data.stage === "error") {
+                                    throw new Error(data.error);
+                                } else {
+                                    setProgress(data.progress);
                                 }
-
-                                // 3. Redirect with minimal params
-                                setUploading(false);
-                                setProgress(100);
-                                router.push(`/dashboard/lectures/${data.lectureId}`);
-                            } else if (data.stage === "error") {
-                                throw new Error(data.error);
-                            } else {
-                                setProgress(data.progress);
+                            } catch (parseError) {
+                                console.error("JSON parse error in upload stream:", parseError, line);
                             }
                         }
                     }
@@ -270,46 +268,52 @@ export default function UploadPage() {
             const decoder = new TextDecoder();
 
             if (reader) {
+                let buffer = "";
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
 
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split("\n");
+                    buffer += decoder.decode(value, { stream: true });
+                    const parts = buffer.split("\n\n");
+                    buffer = parts.pop() || "";
 
-                    for (const line of lines) {
+                    for (const message of parts) {
+                        const line = message.trim();
                         if (line.startsWith("data: ")) {
-                            const data = JSON.parse(line.slice(6));
+                            try {
+                                const data = JSON.parse(line.slice(6));
 
-                            if (data.stage === "done") {
-                                // Save to localStorage, etc. (reuse the logic from handleUpload if possible, but for now duplicate)
-                                const newLecture = {
-                                    id: data.lectureId,
-                                    title: data.title || "YouTube Lecture",
-                                    date: new Date().toISOString().split('T')[0],
-                                    duration: data.transcript.length > 0 ? data.transcript[data.transcript.length - 1].end : 0,
-                                    course: courseName || "General",
-                                    professor: professorName || "Guest Speaker",
-                                    transcript: data.transcript,
-                                    summary: data.summary,
-                                    quiz: data.quiz,
-                                    fileUrl: youtubeUrl,
-                                    slug: data.slug,
-                                };
+                                if (data.stage === "done") {
+                                    const newLecture = {
+                                        id: data.lectureId,
+                                        title: data.title || "YouTube Lecture",
+                                        date: new Date().toISOString().split('T')[0],
+                                        duration: data.transcript.length > 0 ? data.transcript[data.transcript.length - 1].end : 0,
+                                        course: courseName || "General",
+                                        professor: professorName || "Guest Speaker",
+                                        transcript: data.transcript,
+                                        summary: data.summary,
+                                        quiz: data.quiz,
+                                        fileUrl: youtubeUrl,
+                                        slug: data.slug,
+                                    };
 
-                                const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
-                                const existingIndex = history.findIndex((h: any) => h.id === data.lectureId);
-                                if (existingIndex > -1) history[existingIndex] = newLecture;
-                                else history.unshift(newLecture);
-                                localStorage.setItem("notesai_history", JSON.stringify(history.slice(0, 20)));
+                                    const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
+                                    const existingIndex = history.findIndex((h: any) => h.id === data.lectureId);
+                                    if (existingIndex > -1) history[existingIndex] = newLecture;
+                                    else history.unshift(newLecture);
+                                    localStorage.setItem("notesai_history", JSON.stringify(history.slice(0, 20)));
 
-                                setUploading(false);
-                                setProgress(100);
-                                router.push(`/dashboard/lectures/${data.lectureId}`);
-                            } else if (data.stage === "error") {
-                                throw new Error(data.error);
-                            } else {
-                                setProgress(data.progress);
+                                    setUploading(false);
+                                    setProgress(100);
+                                    router.push(`/dashboard/lectures/${data.lectureId}`);
+                                } else if (data.stage === "error") {
+                                    throw new Error(data.error);
+                                } else {
+                                    setProgress(data.progress);
+                                }
+                            } catch (parseError) {
+                                console.error("JSON parse error in URL stream:", parseError, line);
                             }
                         }
                     }
@@ -359,46 +363,52 @@ export default function UploadPage() {
             const decoder = new TextDecoder();
 
             if (reader) {
+                let buffer = "";
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
 
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split("\n");
+                    buffer += decoder.decode(value, { stream: true });
+                    const parts = buffer.split("\n\n");
+                    buffer = parts.pop() || "";
 
-                    for (const line of lines) {
+                    for (const message of parts) {
+                        const line = message.trim();
                         if (line.startsWith("data: ")) {
-                            const data = JSON.parse(line.slice(6));
+                            try {
+                                const data = JSON.parse(line.slice(6));
 
-                            if (data.stage === "done") {
-                                // Save to localStorage, etc.
-                                const newLecture = {
-                                    id: data.lectureId,
-                                    title: data.title || "Pasted Content",
-                                    date: new Date().toISOString().split('T')[0],
-                                    duration: data.transcript.length > 0 ? data.transcript[data.transcript.length - 1].end : 0,
-                                    course: courseName || "General",
-                                    professor: professorName || "Guest Speaker",
-                                    transcript: data.transcript,
-                                    summary: data.summary,
-                                    quiz: data.quiz,
-                                    fileUrl: "pasted-text",
-                                    slug: data.slug,
-                                };
+                                if (data.stage === "done") {
+                                    const newLecture = {
+                                        id: data.lectureId,
+                                        title: data.title || "Pasted Content",
+                                        date: new Date().toISOString().split('T')[0],
+                                        duration: data.transcript.length > 0 ? data.transcript[data.transcript.length - 1].end : 0,
+                                        course: courseName || "General",
+                                        professor: professorName || "Guest Speaker",
+                                        transcript: data.transcript,
+                                        summary: data.summary,
+                                        quiz: data.quiz,
+                                        fileUrl: "pasted-text",
+                                        slug: data.slug,
+                                    };
 
-                                const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
-                                const existingIndex = history.findIndex((h: any) => h.id === data.lectureId);
-                                if (existingIndex > -1) history[existingIndex] = newLecture;
-                                else history.unshift(newLecture);
-                                localStorage.setItem("notesai_history", JSON.stringify(history.slice(0, 20)));
+                                    const history = JSON.parse(localStorage.getItem("notesai_history") || "[]");
+                                    const existingIndex = history.findIndex((h: any) => h.id === data.lectureId);
+                                    if (existingIndex > -1) history[existingIndex] = newLecture;
+                                    else history.unshift(newLecture);
+                                    localStorage.setItem("notesai_history", JSON.stringify(history.slice(0, 20)));
 
-                                setUploading(false);
-                                setProgress(100);
-                                router.push(`/dashboard/lectures/${data.lectureId}`);
-                            } else if (data.stage === "error") {
-                                throw new Error(data.error);
-                            } else {
-                                setProgress(data.progress);
+                                    setUploading(false);
+                                    setProgress(100);
+                                    router.push(`/dashboard/lectures/${data.lectureId}`);
+                                } else if (data.stage === "error") {
+                                    throw new Error(data.error);
+                                } else {
+                                    setProgress(data.progress);
+                                }
+                            } catch (parseError) {
+                                console.error("JSON parse error in text stream:", parseError, line);
                             }
                         }
                     }
