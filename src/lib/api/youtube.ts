@@ -35,28 +35,55 @@ export async function getYouTubeTranscript(videoIdOrUrl: string) {
 
         const html = await response.text();
 
-        // Step 2: Extract ytInitialPlayerResponse
-        // Look for the JSON object in the script tags
-        const jsonMatch = html.match(/ytInitialPlayerResponse\s*=\s*({.+?});/);
+        // Step 2: Extract ytInitialPlayerResponse or ytInitialData
+        // These are the most reliable JSON sources for transcripts
+        const sources = [
+            { name: 'ytInitialPlayerResponse', regex: /ytInitialPlayerResponse\s*=\s*({.+?})\s*[; <]/ },
+            { name: 'ytInitialData', regex: /ytInitialData\s*=\s*({.+?})\s*[; <]/ }
+        ];
+
         let captionTracks = [];
 
-        if (jsonMatch) {
-            try {
-                const playerResponse = JSON.parse(jsonMatch[1]);
-                captionTracks = playerResponse.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
-                console.log(`[YouTube] Found ${captionTracks.length} tracks via PlayerResponse`);
-            } catch (e) {
-                console.error("[YouTube] Failed to parse player response JSON");
+        for (const source of sources) {
+            const match = html.match(source.regex);
+            if (match) {
+                try {
+                    const data = JSON.parse(match[1]);
+                    // Path for ytInitialPlayerResponse
+                    let tracks = data.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+
+                    // Path search for ytInitialData (sometimes it's nested deep)
+                    if (!tracks && source.name === 'ytInitialData') {
+                        // Deep search helper for captions
+                        const findCaptions = (obj: any): any => {
+                            if (!obj || typeof obj !== 'object') return null;
+                            if (obj.captionTracks) return obj.captionTracks;
+                            for (const key in obj) {
+                                const result = findCaptions(obj[key]);
+                                if (result) return result;
+                            }
+                            return null;
+                        };
+                        tracks = findCaptions(data);
+                    }
+
+                    if (tracks && Array.isArray(tracks) && tracks.length > 0) {
+                        captionTracks = tracks;
+                        console.log(`[YouTube] Found ${captionTracks.length} tracks via ${source.name}`);
+                        break;
+                    }
+                } catch (e) {
+                    console.error(`[YouTube] Failed to parse ${source.name} JSON`);
+                }
             }
         }
 
-        // Step 3: Fallback to old regex if playerResponse failed
+        // Step 3: Fallback to old regex if JSON sources failed
         if (captionTracks.length === 0) {
-            const tracksRegex = /"captionTracks":\s*(\[.*?\])/;
-            const tracksMatch = html.match(tracksRegex);
-            if (tracksMatch) {
+            const legacyMatch = html.match(/"captionTracks":\s*(\[.*?\])/);
+            if (legacyMatch) {
                 try {
-                    captionTracks = JSON.parse(tracksMatch[1]);
+                    captionTracks = JSON.parse(legacyMatch[1]);
                     console.log(`[YouTube] Found ${captionTracks.length} tracks via legacy regex`);
                 } catch (e) {
                     console.error("[YouTube] Failed to parse legacy tracks JSON");
@@ -84,9 +111,9 @@ export async function getYouTubeTranscript(videoIdOrUrl: string) {
         }
 
         // Step 5: Select best track
-        const track = captionTracks.find((t: any) => t.languageCode === 'en') || 
-                      captionTracks.find((t: any) => t.languageCode.startsWith('en')) ||
-                      captionTracks[0];
+        const track = captionTracks.find((t: any) => t.languageCode === 'en') ||
+            captionTracks.find((t: any) => t.languageCode.startsWith('en')) ||
+            captionTracks[0];
 
         if (!track || !track.baseUrl) {
             throw new Error("Could not find a valid transcript URL.");
