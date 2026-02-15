@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Plus, Clock, User } from "lucide-react";
 import { Lecture } from "@/lib/types";
 import { useAuth } from "@clerk/nextjs";
-import { supabase } from "@/lib/supabase";
+import { createClerkSupabaseClient } from "@/lib/supabase";
 
 export default function Dashboard() {
-    const { userId } = useAuth();
+    const { userId, getToken } = useAuth();
     const [lectures, setLectures] = useState<Lecture[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -24,6 +24,10 @@ export default function Dashboard() {
             }
 
             try {
+                const token = await getToken({ template: "supabase" });
+                if (!token) return;
+
+                const supabase = createClerkSupabaseClient(token);
                 const { data, error } = await supabase
                     .from("lectures")
                     .select("*")

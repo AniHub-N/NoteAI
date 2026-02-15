@@ -79,12 +79,14 @@ const MOCK_LECTURE: Lecture = {
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 
-import { supabase } from "@/lib/supabase";
+import { supabase, createClerkSupabaseClient } from "@/lib/supabase";
+import { useAuth } from "@clerk/nextjs";
 
 
 export default function LecturePage() {
     const params = useParams();
     const id = params?.id as string;
+    const { getToken } = useAuth();
 
     const [lecture, setLecture] = useState<Lecture | null>(null);
     const [activeTab, setActiveTab] = useState("study");
@@ -115,8 +117,15 @@ export default function LecturePage() {
 
             // 3. Fetch from Supabase (Persistence across versions/devices)
             try {
+                const token = await getToken({ template: "supabase" });
                 const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-                let query = supabase.from("lectures").select("*");
+
+                let supabaseToUse = supabase;
+                if (token) {
+                    supabaseToUse = createClerkSupabaseClient(token);
+                }
+
+                let query = supabaseToUse.from("lectures").select("*");
 
                 if (isUuid) {
                     query = query.or(`id.eq.${id},slug.eq.${id}`);
