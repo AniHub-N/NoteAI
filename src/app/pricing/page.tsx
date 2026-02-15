@@ -251,7 +251,7 @@ export default function PricingPage() {
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                <Button className="w-full bg-white text-black hover:bg-zinc-200 h-12 font-bold" onClick={() => window.open('mailto:support@notesai.com')}>
+                                <Button className="w-full bg-white text-black hover:bg-zinc-200 h-12 font-bold" onClick={() => window.open('mailto:anoteani@gmail.com')}>
                                     <Mail className="mr-2 h-4 w-4" />
                                     Email Support
                                 </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, Mail, ChevronLeft, Github } from "lucide-react";
+import { MessageCircle, Mail, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,7 +28,7 @@ export default function ContactPage() {
                     <p className="text-zinc-400 text-lg">Have questions about your plan, payments, or a technical issue? Drop us a line.</p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="max-w-md mx-auto">
                     <Card className="bg-zinc-950/50 border-zinc-800 hover:border-indigo-500/50 transition-colors group">
                         <CardContent className="p-8 text-center italic">
                             <div className="mx-auto h-12 w-12 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-6 group-hover:bg-indigo-600/10 transition-colors">
@@ -41,19 +41,6 @@ export default function ContactPage() {
                                     anoteani@gmail.com
                                 </Button>
                             </a>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-zinc-950/50 border-zinc-800 hover:border-indigo-500/50 transition-colors group">
-                        <CardContent className="p-8 text-center">
-                            <div className="mx-auto h-12 w-12 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 mb-6 group-hover:bg-indigo-600/10 transition-colors">
-                                <Github className="h-6 w-6 text-white" />
-                            </div>
-                            <h3 className="font-bold text-xl mb-2 text-white">GitHub</h3>
-                            <p className="text-zinc-400 text-sm mb-6">Contribute to the project or open a public issue if you&apos;re a developer.</p>
-                            <Button variant="outline" className="w-full border-zinc-700 hover:bg-zinc-900 font-bold">
-                                View Repository
-                            </Button>
                         </CardContent>
                     </Card>
                 </div>
