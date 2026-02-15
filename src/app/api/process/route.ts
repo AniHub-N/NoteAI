@@ -16,28 +16,78 @@ export async function POST(_request: NextRequest) {
         const body = await _request.json();
         const { fileUrl, youtubeUrl, filename, courseName, professorName } = body;
 
-        // Usage Limit Check (3 free lectures)
+        // Usage Limit Check (Based on Tier)
         if (userId !== "anonymous") {
             try {
                 const { supabaseAdmin } = await import("@/lib/supabase");
-                const { count, error: countError } = await supabaseAdmin
-                    .from("lectures")
-                    .select("*", { count: "exact", head: true })
-                    .eq("user_id", userId);
 
-                if (countError) console.error("Limit check error:", countError);
-                else if (count !== null && count >= 3) {
-                    return NextResponse.json(
-                        {
-                            error: "Usage limit reached",
-                            message: "You've reached your limit of 3 free lectures. Upgrade to Pro for unlimited access!",
-                            limitReached: true
-                        },
-                        { status: 403 }
-                    );
+                // 1. Fetch User Profile
+                let { data: profile, error: profileError } = await supabaseAdmin
+                    .from("profiles")
+                    .select("*")
+                    .eq("user_id", userId)
+                    .single();
+
+                // 2. If no profile exists, create one (defaulting to 'free')
+                if (profileError && profileError.code === 'PGRST116') {
+                    const { data: newProfile, error: createError } = await supabaseAdmin
+                        .from("profiles")
+                        .insert({ user_id: userId, tier: 'free' })
+                        .select()
+                        .single();
+                    if (!createError) profile = newProfile;
+                }
+
+                const userTier = profile?.tier || 'free';
+                const userCredits = profile?.credits || 0;
+
+                console.log(`[Pricing] User: ${userId}, Tier: ${userTier}`);
+
+                // 3. Enforce Limits
+                if (userTier === 'pro') {
+                    // Pro users have unlimited access
+                    console.log("[Pricing] Pro user - bypassing limits");
+                } else if (userTier === 'otg') {
+                    // Pay-as-you-go logic
+                    if (userCredits <= 0) {
+                        return NextResponse.json(
+                            {
+                                error: "No credits remaining",
+                                message: "Your Pay-as-you-go credits have run out. Please buy more credits to process this lecture!",
+                                limitReached: true
+                            },
+                            { status: 403 }
+                        );
+                    }
+                    // For now, we deduct 1 'credit' per lecture. 
+                    // Future: Could be 1 credit per 15 mins of audio.
+                    await supabaseAdmin
+                        .from("profiles")
+                        .update({ credits: userCredits - 1 })
+                        .eq("user_id", userId);
+                    console.log(`[Pricing] OTG user - 1 credit deducted. Remaining: ${userCredits - 1}`);
+                } else {
+                    // Free Tier: 3 lecture limit
+                    const { count, error: countError } = await supabaseAdmin
+                        .from("lectures")
+                        .select("*", { count: "exact", head: true })
+                        .eq("user_id", userId);
+
+                    if (countError) console.error("Limit check error:", countError);
+                    else if (count !== null && count >= 3) {
+                        return NextResponse.json(
+                            {
+                                error: "Usage limit reached",
+                                message: "You've reached your limit of 3 free lectures. Upgrade to Pro for unlimited access!",
+                                limitReached: true
+                            },
+                            { status: 403 }
+                        );
+                    }
                 }
             } catch (err) {
                 console.error("Failed to check usage limits:", err);
+                // Fallback: Default to allowing it but log error
             }
         }
 
